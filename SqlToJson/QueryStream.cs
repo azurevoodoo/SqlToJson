@@ -16,7 +16,6 @@ namespace SqlToJson
         private readonly ReadOnlyCollection<(string Name, int Ordinal)> columns;
 
         private long position;
-        private bool header;
         private bool first;
         private bool last;
 
@@ -40,14 +39,6 @@ namespace SqlToJson
                 return 0;
             }
 
-            if (header)
-            {
-                position = 0;
-                header = false;
-                buffer[0] = 91; // [
-                buffer[1] = 10; // LF
-                return 2;
-            }
 
             if (rowPosition >= row.Length)
             {
@@ -73,6 +64,10 @@ namespace SqlToJson
             if (first)
             {
                 first = false;
+                position = 0;
+                buffer[0] = 91; // [
+                buffer[1] = 10; // LF
+                index = 2;
             }
             else if(rowPosition == 0)
             {
@@ -104,7 +99,7 @@ namespace SqlToJson
             row = null;
         }
 
-        public static async Task<QueryStream> OpenStream(string query, string connectionString)
+        public static async Task<Stream> OpenStream(string query, string connectionString)
         {
             if (query == null)
             {
@@ -145,7 +140,6 @@ namespace SqlToJson
             this.reader = reader ?? throw new ArgumentNullException(nameof(reader));
             this.columns = columns ?? throw new ArgumentNullException(nameof(columns));
             position = -1;
-            header = true;
             first = true;
             row = Array.Empty<byte>();
             rowPosition = 0;
